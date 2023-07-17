@@ -20,15 +20,19 @@ pub(crate) enum TcpCommand {
         model: Model,
         position: Vec3,
         color: Color,
+        rotation: Vec3,
+        scale: Vec3,
     },
     Despawn {
         id: u64,
     },
     DespawnAll,
-
     ApplyMotorCommand {
         id: u64,
         command: HashMap<u64, f32>,
+    },
+    PublishFlatBuffers {
+        data: String,
     },
     PausePhysics,
     RunPhysics,
@@ -78,7 +82,7 @@ pub(crate) fn handle_requests(
         match tcp_stream.read(&mut tcp_buffer.data) {
             Ok(msg_len) => {
                 if msg_len == 0 {
-                    continue;
+                    return;
                 }
 
                 got_msg = true;
@@ -97,10 +101,19 @@ pub(crate) fn handle_requests(
                                     model,
                                     position,
                                     color,
+                                    rotation,
+                                    scale,
                                 } => {
                                     spawn_event_writer.send(SpawnEvent::Spawn {
                                         model,
-                                        transform: Transform::from_translation(position),
+                                        transform: Transform::from_translation(position)
+                                            .with_rotation(Quat::from_euler(
+                                                EulerRot::XYZ,
+                                                rotation.x,
+                                                rotation.y,
+                                                rotation.z,
+                                            ))
+                                            .with_scale(scale),
                                         color,
                                     });
                                 }
@@ -123,6 +136,12 @@ pub(crate) fn handle_requests(
                                             command,
                                         },
                                     )
+                                }
+                                TcpCommand::PublishFlatBuffers { data } => {
+                                    // TODO skip converting to base64 and just send the bytes
+                                    let decoded = base64::decode(data).expect("Invalid base64 string");
+                                    system_event_writer
+                                        .send(SimulatorRequestEvent::PublishFlatBuffers(decoded))
                                 }
                                 TcpCommand::Despawn { id } => {
                                     physic_event_writer.send(PhysicRequestEvent::DespawnBody(id))

@@ -11,6 +11,9 @@ from ..protocol.commands import (
     RunPhysics,
     Spawn,
     Despawn,
+    SpawnAsset,
+    SpawnUrdf,
+    PublishFlatBuffers
 )
 from ..protocol.response import (
     CollisionStarted,
@@ -52,7 +55,19 @@ class BindingBackend:
                     )
 
                 self.kesko.spawn(
-                    model=command.model, position=command.position, color=color
+                    model=command.model, position=command.position, color=color, scale=command.scale, rotation=command.rotation
+                )
+
+            elif isinstance(command, SpawnAsset):
+                self.kesko.spawn_asset(
+                    asset_path=command.asset_path, position=command.position
+                )
+
+            elif isinstance(command, SpawnUrdf):
+                self.kesko.spawn_urdf(
+                    urdf_path=command.urdf_path,
+                    package_map=command.package_map,
+                    position=command.position,
                 )
 
             elif isinstance(command, RunPhysics):
@@ -63,6 +78,9 @@ class BindingBackend:
 
             elif isinstance(command, ApplyControl):
                 self.kesko.apply_motor_commands(command.values)
+
+            elif isinstance(command, PublishFlatBuffers):
+                self.kesko.publish_flatbuffers(command.data)
 
         # step simulation
         self.kesko.step()

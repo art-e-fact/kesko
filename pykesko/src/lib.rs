@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use bevy::log::Level;
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::hashbrown::HashMap};
 use phf::phf_map;
 use pyo3::prelude::*;
 
@@ -13,6 +13,9 @@ use kesko::physics::{
 };
 use kesko::plugins::{CorePlugins, HeadlessRenderPlugins, UIPlugin};
 use kesko::tcp::TcpPlugin;
+use kesko_urdf::UrdfPlugin;
+use placeholder_box::PlaceholderBoxPlugin;
+use renet_transport::RenetServerWorker;
 
 static PYTHON_LOG_TO_BEVY_LOG_LEVEL: phf::Map<i32, Level> = phf_map! {
     10i32 => Level::DEBUG,
@@ -25,6 +28,7 @@ static PYTHON_LOG_TO_BEVY_LOG_LEVEL: phf::Map<i32, Level> = phf_map! {
 fn pykesko(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<KeskoApp>()?;
     m.add_class::<Model>()?;
+    m.add_class::<RenetServerWorker>()?;
     m.add_function(wrap_pyfunction!(run_kesko_tcp, m)?)?;
     Ok(())
 }
@@ -41,6 +45,8 @@ fn run_kesko_tcp(window: bool, log_level: i32) {
             })
             .add_plugin(CarPlugin)
             .add_plugin(WheelyPlugin)
+            .add_plugin(UrdfPlugin)
+            .add_plugin(PlaceholderBoxPlugin)
             .add_plugin(TcpPlugin)
             .add_startup_system(start_scene)
             .run();
@@ -82,6 +88,8 @@ impl KeskoApp {
             )
             .add_plugin(CarPlugin)
             .add_plugin(WheelyPlugin)
+            .add_plugin(UrdfPlugin)
+            .add_plugin(PlaceholderBoxPlugin)
             .add_startup_system(start_scene);
         self.app.setup();
     }
@@ -99,10 +107,24 @@ impl KeskoApp {
         self.app.update();
     }
 
-    pub fn spawn(&mut self, model: Model, position: Vec<f32>, color: Vec<f32>) {
+    pub fn spawn(
+        &mut self,
+        model: Model,
+        position: Vec<f32>,
+        color: Vec<f32>,
+        rotation: Vec<f32>,
+        scale: Vec<f32>,
+    ) {
         self.app.world.send_event::<SpawnEvent>(SpawnEvent::Spawn {
             model,
-            transform: Transform::from_xyz(position[0], position[1], position[2]),
+            transform: Transform::from_xyz(position[0], position[1], position[2])
+                .with_rotation(Quat::from_euler(
+                    EulerRot::XYZ,
+                    rotation[0],
+                    rotation[1],
+                    rotation[2],
+                ))
+                .with_scale(Vec3::new(scale[0], scale[1], scale[2])),
             color: Color::Rgba {
                 red: color[0],
                 green: color[1],
@@ -167,6 +189,14 @@ impl KeskoApp {
                 },
             });
         }
+    }
+
+    pub fn publish_flatbuffers(&mut self, flatbuffer: Vec<u8>) {
+        self.app
+            .world
+            .send_event::<SimulatorRequestEvent>(SimulatorRequestEvent::PublishFlatBuffers(
+                flatbuffer,
+            ));
     }
 
     pub fn get_multibody_state(&mut self) -> PyResult<Option<String>> {

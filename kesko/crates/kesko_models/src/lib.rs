@@ -1,13 +1,16 @@
 pub mod arena;
 pub mod car;
+pub mod cube;
 pub mod humanoid;
 pub mod plane;
 pub mod snake;
 pub mod sphere;
 pub mod spider;
 pub mod wheely;
+// pub mod gltf_model;
 
 use bevy::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +33,7 @@ impl Plugin for ModelPlugin {
             )
                 .chain(),
         )
+        .add_plugin(bevy_stl::StlPlugin)
         .add_system(spawn_system.in_base_set(SpawnSet::Spawn))
         .add_system(apply_system_buffers.in_base_set(SpawnSet::SpawnFlush))
         .add_event::<SpawnEvent>();
@@ -43,6 +47,10 @@ pub enum SpawnEvent {
         transform: Transform,
         color: Color,
     },
+    // SpawnAsset {
+    //     asset_path: String,
+    //     transform: Transform,
+    // },
 }
 
 /// Description on how to manually control a robot
@@ -51,10 +59,11 @@ pub enum SpawnEvent {
 pub struct ControlDescription(pub String);
 
 // Enum to represent each default model
-#[pyclass]
+#[cfg_attr(not(target_arch = "wasm32"), pyclass(get_all))]
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Model {
     Car,
+    Cube,
     Snake,
     Spider,
     Sphere,
@@ -64,13 +73,13 @@ pub enum Model {
     Plane,
 }
 
-#[pymethods]
+#[cfg_attr(not(target_arch = "wasm32"), pymethods)]
 impl Model {
     /// Names to use for example in UI
-    #[getter]
     pub const fn name(&self) -> &'static str {
         match self {
             Self::Car => "Car",
+            Self::Cube => "Cube",
             Self::Snake => "Snake",
             Self::Spider => "Spider",
             Self::Sphere => "Sphere",
@@ -115,6 +124,7 @@ pub fn spawn_system(
                         &mut meshes,
                     );
                 }
+                Model::Cube => cube::Cube::spawn(&mut commands, material, *transform, &mut meshes),
                 Model::Sphere => {
                     sphere::Sphere::spawn(&mut commands, material, *transform, &mut meshes)
                 }

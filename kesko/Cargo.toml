@@ -9,7 +9,11 @@ members = [
     "crates/kesko_plugins",
     "crates/kesko_ui",
     "crates/kesko_diagnostic",
-    "crates/kesko_tcp"
+    "crates/kesko_tcp",
+    "crates/kesko_urdf",
+    "crates/placeholder_box",
+    "crates/renet_transport",
+    "crates/sdf_model_loader" 
 ]
 
 [package]
@@ -33,6 +37,9 @@ name = "kesko_tcp_headless"
 [[bin]]
 name = "kesko_demo"
 
+[[bin]]
+name = "empty_tcp"
+
 # Enable a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
@@ -50,8 +57,6 @@ bevy = { version = "0.10.1", default-features = false, features = ["bevy_render"
 [dependencies]
 bevy = { version = "0.10.1", default-features = false, features = ["bevy_render", "bevy_winit", "bevy_scene", "x11", "bevy_asset", "bevy_pbr", "bevy_core_pipeline"] }
 
-pyo3 = { version = "0.18.3", features = ["extension-module"] }
-
 kesko_types = { path = "crates/kesko_types"}
 kesko_core = { path = "crates/kesko_core" }
 kesko_physics = { path = "crates/kesko_physics", features = ["f32"] }
@@ -61,3 +66,11 @@ kesko_models = { path = "crates/kesko_models" }
 kesko_plugins = { path="crates/kesko_plugins" }
 kesko_diagnostic = { path="crates/kesko_diagnostic" }
 kesko_tcp = { path = "crates/kesko_tcp" }
+kesko_urdf = { path = "crates/kesko_urdf" }
+placeholder_box = { path = "crates/placeholder_box" }
+renet_transport = { path = "crates/renet_transport" }
+sdf_model_loader = { path = "crates/sdf_model_loader" }
+
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+pyo3 = { version = "0.18.3", features = ["extension-module"] }

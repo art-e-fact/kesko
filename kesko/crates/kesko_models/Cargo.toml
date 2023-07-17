@@ -5,11 +5,16 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
-pyo3 = { version = "0.18.3", features = ["extension-module"] }
 serde = "1.0.137"
 serde_json = "1.0.81"
+bevy_stl = "0.8.0"
+urdf-rs = "0.7.2"
+k = "0.30"
 
 kesko_physics = { path = "../kesko_physics" }
 kesko_object_interaction = { path = "../kesko_object_interaction"}
 kesko_raycast = { path = "../kesko_raycast"}
 kesko_core = { path = "../kesko_core"}
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+pyo3 = { version = "0.18.3", features = ["extension-module"] }

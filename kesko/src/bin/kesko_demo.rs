@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use kesko_core::interaction::groups::GroupDynamic;
+use kesko_core::{interaction::groups::GroupDynamic, event::SimulatorRequestEvent};
 
 use kesko_diagnostic::DiagnosticsPlugins;
 use kesko_plugins::CorePlugins;
@@ -9,7 +9,7 @@ use kesko_models::{car::CarPlugin, wheely::WheelyPlugin};
 use kesko_object_interaction::InteractiveBundle;
 use kesko_physics::{
     collider::ColliderShape, event::collision::GenerateCollisionEvents, force::Force,
-    gravity::GravityScale, rigid_body::RigidBody,
+    gravity::GravityScale, rigid_body::RigidBody, joint::{ JointMotorEvent ,MotorCommand },
 };
 
 fn main() {
@@ -76,7 +76,7 @@ fn test_scene(
     kesko_models::snake::Snake::spawn(
         &mut commands,
         materials.add(StandardMaterial {
-            base_color: Color::ORANGE_RED,
+            base_color: Color::ORANGE_RED,  
             perceptual_roughness: 1.0,
             ..default()
         }),
